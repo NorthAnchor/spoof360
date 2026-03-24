@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0e1a"/>
+<title>Spoof 360</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0a0e1a;color:#e2e8f0;font-family:'Courier New',monospace;min-height:100vh}
+input,select,textarea,button{font-family:'Courier New',monospace;font-size:14px}
+input[type=range]{width:100%;accent-color:#5eead4;margin:4px 0 8px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0e1a}
+::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+/* CALCULATOR */
+#calc-screen{background:#1a1a2e;align-items:center;justify-content:flex-end;padding-bottom:24px}
+.calc-wrap{width:100%;max-width:380px;padding:0 16px}
+.calc-display{background:#0f0f1a;border-radius:16px;padding:20px 20px 8px;margin-bottom:8px;text-align:right}
+.calc-expr{font-size:13px;color:#334155;min-height:20px}
+.calc-num{font-size:48px;color:#e2e8f0;font-weight:200;letter-spacing:-2px}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.calc-btn{height:70px;border-radius:14px;border:none;cursor:pointer;font-size:24px;font-weight:300;color:#e2e8f0;background:#1e293b;transition:opacity .15s}
+.calc-btn.eq{background:#f97316;color:#fff}
+.calc-btn.cl{background:#334155}
+.calc-btn.empty{opacity:0;pointer-events:none}
+/* PIN */
+#pin-screen{background:#0a0e1a;align-items:center;justify-content:center;padding:24px}
+.pin-dots{display:flex;gap:16px;margin-bottom:40px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:#1e293b;border:2px solid #334155;transition:background .2s}
+.pin-dot.filled{background:#5eead4}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:240px}
+.pin-btn{height:64px;border-radius:12px;border:1px solid #1e293b;background:#0d1b2a;color:#e2e8f0;font-size:22px;cursor:pointer;font-weight:300}
+.pin-btn.empty{opacity:0;pointer-events:none}
+/* MAIN APP */
+#app-screen{background:#0a0e1a;flex-direction:column}
+header{background:linear-gradient(135deg,#0d1b2a,#0f2744);padding:18px 16px 12px;border-bottom:2px solid #1e3a5f;position:relative;flex-shrink:0}
+.logo{font-size:26px;font-weight:700;color:#5eead4;letter-spacing:3px}
+.logo span{color:#f97316}
+.subtitle{font-size:10px;color:#334155;letter-spacing:4px;margin-top:2px}
+.batt-widget{position:absolute;right:12px;top:16px;display:flex;align-items:center;gap:4px}
+.batt-pct{font-size:11px;color:#4ade80;font-weight:700}
+.batt-icon{width:26px;height:12px;border:1.5px solid #4ade80;border-radius:3px;position:relative;overflow:hidden}
+.batt-fill{position:absolute;left:0;top:0;bottom:0;background:#4ade80;transition:width .3s}
+.banner-strip{padding:7px 14px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.tabs{display:flex;background:#080d17;border-bottom:1px solid #1e3a5f;flex-shrink:0;overflow-x:auto}
+.tab-btn{flex:1;padding:12px 4px;background:transparent;border:none;color:#475569;cursor:pointer;font-size:13px;white-space:nowrap;letter-spacing:1px;border-bottom:2px solid transparent}
+.tab-btn.active{color:#5eead4;border-bottom:2px solid #5eead4;background:#0a1628}
+.tab-content{display:none;padding:16px;overflow-y:auto;flex:1}
+.tab-content.active{display:block}
+/* COMPONENTS */
+.card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:12px;padding:14px;margin-bottom:14px}
+.spoof-title{font-size:12px;font-weight:700;color:#5eead4;letter-spacing:2px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sq{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px}
+.sq-label{font-size:10px;color:#475569;letter-spacing:2px;text-transform:uppercase}
+.sq-val{font-size:16px;font-weight:700;color:#5eead4;margin-top:4px}
+.coord-box{background:#080d17;border:1px solid #5eead433;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.coord-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0d1b2a}
+.coord-label{color:#475569;font-size:11px;letter-spacing:2px}
+.coord-val{font-size:13px;font-weight:700;color:#5eead4}
+.coord-val.hi{color:#fbbf24}
+.btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;font-family:'Courier New',monospace}
+.btn-blue{background:linear-gradient(135deg,#38bdf8,#0369a1);color:#000}
+.btn-red{background:linear-gradient(135deg,#f87171,#dc2626);color:#fff}
+.btn-green{background:linear-gradient(135deg,#4ade80,#16a34a);color:#000}
+.btn-gray{background:#1e293b;color:#5eead4;border:1px solid #1e3a5f}
+.btn-discard{background:#1a0a0a;color:#f87171;border:1px solid #f8717122}
+.inp{width:100%;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:12px;color:#e2e8f0;font-size:13px;margin-bottom:10px}
+.mini-label{display:block;font-size:10px;color:#475569;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.mini-sel{width:100%;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:6px;padding:9px;color:#e2e8f0;font-size:12px;margin-bottom:10px}
+.mini-inp{width:100%;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:6px;padding:8px;color:#e2e8f0;font-size:12px;margin-bottom:8px}
+.time-inp{width:100%;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:6px;padding:10px;color:#5eead4;font-size:14px;margin-bottom:10px}
+.hint{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px;color:#475569;font-size:11px;line-height:1.7;margin-top:8px}
+.activity-banner{text-align:center;padding:10px;border-radius:8px;border:1px solid;font-weight:700;font-size:14px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase}
+.progress-bar{height:5px;background:#0d1b2a;border-radius:3px;overflow:hidden;border:1px solid #1e3a5f;margin-bottom:10px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#5eead4,#4ade80);transition:width 0.3s}
+.toggle{width:40px;height:22px;border-radius:11px;position:relative;cursor:pointer;transition:all .2s;border:1.5px solid #334155;background:#1e293b;flex-shrink:0}
+.toggle.on{background:#4ade8066;border-color:#4ade80}
+.toggle-dot{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#475569;transition:left .2s}
+.toggle.on .toggle-dot{left:18px;background:#4ade80}
+.empty-msg{text-align:center;color:#334155;padding:40px 0;font-size:13px}
+.trip-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:12px;margin-bottom:12px}
+.flex-row{display:flex;gap:8px;align-items:center}
+.flex-btns{display:flex;gap:8px;margin-top:8px}
+.mini-stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.mini-stat{background:#0a1220;border-radius:6px;padding:6px 8px;text-align:center}
+.mini-stat-label{font-size:9px;color:#475569;letter-spacing:1px}
+.mini-stat-val{font-size:12px;color:#5eead4;font-weight:700;margin-top:2px}
+.icon-btn{background:#0d1b2a;border:1px solid #1e3a5f;color:#7ec8e3;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-family:'Courier New',monospace}
+.preset-btn{background:#1e293b;border:none;color:#94a3b8;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:10px;margin-right:6px;font-family:'Courier New',monospace}
+canvas{width:100%;height:200px;display:block;background:#080d17}
+.map-wrap{background:#080d17;border-radius:12px;border:1px solid #1e3a5f;overflow:hidden;margin-bottom:12px}
+.map-legend{display:flex;justify-content:space-around;padding:6px 10px;border-top:1px solid #1e3a5f;font-size:10px}
+.gauge-wrap{display:flex;justify-content:center;padding:10px 0;background:#080d17;border-radius:12px;border:1px solid #1e3a5f;margin-bottom:12px}
+.dual-gauge{display:flex;justify-content:space-around;padding:10px 0;background:#080d17;border-radius:12px;border:1px solid #1e3a5f;margin-bottom:12px}
+.dual-div{width:1px;background:#1e3a5f}
+.block-card{border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid #1e3a5f}
+.sched-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:12px;margin-bottom:10px}
+.geo-card{background:#0d1b2a;border:1px solid #f9731633;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.overlay{position:fixed;inset:0;background:#0a0e1aee;display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px}
+.overlay-box{background:#0d1b2a;border:2px solid #4ade80;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center}
+.act-bar-wrap{background:#080d17;border:1px solid #1e3a5f;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.act-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:6px}
+.act-legend{display:flex;flex-wrap:wrap;gap:3px 10px}
+.wifi-preview{background:#080d17;border-radius:8px;padding:10px 14px;border:1px solid #1e3a5f;margin-top:8px}
+.tz-display{background:#080d17;border-radius:8px;padding:10px 14px;border:1px solid #1e3a5f;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- CALCULATOR SCREEN -->
+<div id="calc-screen" class="screen active">
+  <div class="calc-wrap">
+    <div class="calc-display">
+      <div class="calc-expr" id="calc-expr"></div>
+      <div class="calc-num" id="calc-num">0</div>
+    </div>
+    <div id="calc-buttons"></div>
+  </div>
+</div>
+
+<!-- PIN SETUP SCREEN -->
+<div id="pin-setup-screen" class="screen">
+  <div style="text-align:center;padding:24px">
+    <div style="font-size:32px;margin-bottom:8px">🛡️</div>
+    <div style="font-size:22px;font-weight:700;color:#5eead4;letter-spacing:2px;margin-bottom:4px">SPOOF 360</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:24px;letter-spacing:1px" id="pin-setup-label">SET YOUR PIN</div>
+    <div style="color:#f87171;font-size:13px;margin-bottom:16px;min-height:20px" id="pin-setup-err"></div>
+    <div class="pin-dots" style="justify-content:center">
+      <div class="pin-dot" id="sd0"></div><div class="pin-dot" id="sd1"></div>
+      <div class="pin-dot" id="sd2"></div><div class="pin-dot" id="sd3"></div>
+    </div>
+    <div class="pin-grid" style="margin:0 auto">
+      <button class="pin-btn" onclick="pinSetupPress('1')">1</button>
+      <button class="pin-btn" onclick="pinSetupPress('2')">2</button>
+      <button class="pin-btn" onclick="pinSetupPress('3')">3</button>
+      <button class="pin-btn" onclick="pinSetupPress('4')">4</button>
+      <button class="pin-btn" onclick="pinSetupPress('5')">5</button>
+      <button class="pin-btn" onclick="pinSetupPress('6')">6</button>
+      <button class="pin-btn" onclick="pinSetupPress('7')">7</button>
+      <button class="pin-btn" onclick="pinSetupPress('8')">8</button>
+      <button class="pin-btn" onclick="pinSetupPress('9')">9</button>
+      <button class="pin-btn empty"></button>
+      <button class="pin-btn" onclick="pinSetupPress('0')">0</button>
+      <button class="pin-btn" onclick="pinSetupDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN UNLOCK SCREEN -->
+<div id="pin-unlock-screen" class="screen">
+  <div style="text-align:center;padding:24px">
+    <div style="font-size:32px;margin-bottom:8px">🔐</div>
+    <div style="font-size:22px;font-weight:700;color:#5eead4;letter-spacing:2px;margin-bottom:4px">SPOOF 360</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:24px;letter-spacing:1px">ENTER PIN TO UNLOCK</div>
+    <div style="color:#f87171;font-size:13px;margin-bottom:16px;min-height:20px" id="pin-unlock-err"></div>
+    <div class="pin-dots" style="justify-content:center">
+      <div class="pin-dot" id="ud0"></div><div class="pin-dot" id="ud1"></div>
+      <div class="pin-dot" id="ud2"></div><div class="pin-dot" id="ud3"></div>
+    </div>
+    <div class="pin-grid" style="margin:0 auto">
+      <button class="pin-btn" onclick="pinUnlockPress('1')">1</button>
+      <button class="pin-btn" onclick="pinUnlockPress('2')">2</button>
+      <button class="pin-btn" onclick="pinUnlockPress('3')">3</button>
+      <button class="pin-btn" onclick="pinUnlockPress('4')">4</button>
+      <button class="pin-btn" onclick="pinUnlockPress('5')">5</button>
+      <button class="pin-btn" onclick="pinUnlockPress('6')">6</button>
+      <button class="pin-btn" onclick="pinUnlockPress('7')">7</button>
+      <button class="pin-btn" onclick="pinUnlockPress('8')">8</button>
+      <button class="pin-btn" onclick="pinUnlockPress('9')">9</button>
+      <button class="pin-btn empty"></button>
+      <button class="pin-btn" onclick="pinUnlockPress('0')">0</button>
+      <button class="pin-btn" onclick="pinUnlockDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen" class="screen">
+  <header>
+    <div class="logo">SPOOF<span>360</span></div>
+    <div class="subtitle">LOCATION · MOTION · IDENTITY</div>
+    <div class="batt-widget" id="batt-widget" style="display:none">
+      <div class="batt-pct" id="batt-pct-hdr">100%</div>
+      <div id="batt-charge-icon"></div>
+      <div class="batt-icon"><div class="batt-fill" id="batt-fill-hdr" style="width:100%"></div></div>
+    </div>
+  </header>
+
+  <!-- Status banners -->
+  <div id="sched-banner" class="banner-strip" style="display:none;background:#052e16;border-bottom:1px solid #4ade8033">
+    <div style="font-size:11px;color:#4ade80" id="sched-banner-text"></div>
+    <button class="icon-btn" style="color:#f87171;border-color:#f87171" onclick="stopSchedule()">⏹ STOP</button>
+  </div>
+  <div id="replay-banner" class="banner-strip" style="display:none;background:#0c1a2e;border-bottom:1px solid #38bdf833">
+    <div style="font-size:11px;color:#38bdf8" id="replay-banner-text">▶ REPLAYING</div>
+    <button class="icon-btn" style="color:#f87171;border-color:#f87171" onclick="stopReplay()">⏹ STOP</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('record',this)">⏺ REC</button>
+    <button class="tab-btn" onclick="switchTab('replay',this)">▶ PLAY</button>
+    <button class="tab-btn" onclick="switchTab('schedule',this)">📅 SCHED</button>
+    <button class="tab-btn" onclick="switchTab('spoof',this)">🎭 SPOOF</button>
+    <button class="tab-btn" onclick="switchTab('tools',this)">🔧 TOOLS</button>
+    <button class="tab-btn" onclick="switchTab('trips',this)" id="trips-tab-btn">🗂 TRIPS</button>
+  </div>
+
+  <!-- RECORD TAB -->
+  <div id="tab-record" class="tab-content active">
+    <div class="gauge-wrap"><canvas id="rec-gauge" width="140" height="92"></canvas></div>
+    <div id="rec-activity-banner" class="activity-banner" style="display:none"></div>
+    <div class="grid2">
+      <div class="sq"><div class="sq-label">STATUS</div><div class="sq-val" id="rec-status">⚫ IDLE</div></div>
+      <div class="sq"><div class="sq-label">POINTS</div><div class="sq-val" id="rec-points">0</div></div>
+      <div class="sq"><div class="sq-label">ELAPSED</div><div class="sq-val" id="rec-elapsed">00:00:00</div></div>
+      <div class="sq"><div class="sq-label">DISTANCE</div><div class="sq-val" id="rec-dist">—</div></div>
+    </div>
+    <div class="coord-box" id="rec-coords" style="display:none">
+      <div class="coord-row"><span class="coord-label">LAT</span><span class="coord-val" id="rec-lat">—</span></div>
+      <div class="coord-row"><span class="coord-label">LNG</span><span class="coord-val" id="rec-lng">—</span></div>
+      <div class="coord-row"><span class="coord-label">ALT</span><span class="coord-val hi" id="rec-alt">—</span></div>
+      <div class="coord-row"><span class="coord-label">SPD</span><span class="coord-val hi" id="rec-spd">—</span></div>
+    </div>
+    <div id="motion-box" style="display:none" class="card" style="margin-bottom:10px">
+      <div class="mini-label">SPOOFED ACCELEROMETER</div>
+      <div style="display:flex;gap:16px;font-size:12px;color:#4ade80;font-family:monospace">
+        <span id="motion-x">X: 0.00</span><span id="motion-y">Y: 9.81</span><span id="motion-z">Z: 0.00</span>
+      </div>
+    </div>
+    <button class="btn btn-blue" id="rec-btn" onclick="toggleRecord()">⏺ START RECORDING</button>
+    <div id="rec-save-box" style="display:none">
+      <div id="rec-activity-bar"></div>
+      <input class="inp" id="trip-name-inp" placeholder="Trip name (optional)"/>
+      <textarea class="inp" id="trip-notes-inp" placeholder="Notes / alibi (e.g. walked to pharmacy)" style="height:60px;resize:none"></textarea>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green" style="flex:2;margin-bottom:0" onclick="saveTrip()">💾 SAVE TRIP</button>
+        <button class="btn btn-discard" style="flex:1;margin-bottom:0" onclick="discardRec()">🗑</button>
+      </div>
+    </div>
+    <div class="hint">Open in Chrome on Android and allow location. Speed &amp; activity saved per point for accurate replay.</div>
+  </div>
+
+  <!-- REPLAY TAB -->
+  <div id="tab-replay" class="tab-content">
+    <label class="mini-label">Select Trip</label>
+    <select class="mini-sel" id="replay-select" onchange="selectReplayTrip()">
+      <option value="">— choose a trip —</option>
+    </select>
+    <div id="replay-trip-detail" style="display:none">
+      <div id="replay-notes-box" style="display:none" class="card" style="margin-bottom:12px">
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6" id="replay-notes-text"></div>
+      </div>
+      <div class="map-wrap">
+        <div style="position:relative">
+          <div style="position:absolute;top:8px;left:10px;font-size:10px;color:#5eead4;letter-spacing:2px;z-index:1;background:#080d17cc;padding:2px 6px;border-radius:4px">ROUTE MAP</div>
+          <canvas id="replay-map" width="360" height="200"></canvas>
+        </div>
+        <div class="map-legend">
+          <span style="color:#4ade80">● Start</span>
+          <span style="color:#5eead4">● Current</span>
+          <span style="color:#f97316">● End</span>
+        </div>
+      </div>
+      <div id="replay-gauge-area"></div>
+      <div id="replay-act-banner" class="activity-banner" style="display:none"></div>
+      <div id="replay-act-bar"></div>
+      <div class="grid2">
+        <div class="sq"><div class="sq-label">POINTS</div><div class="sq-val" id="rp-points">—</div></div>
+        <div class="sq"><div class="sq-label">DURATION</div><div class="sq-val" id="rp-dur">—</div></div>
+        <div class="sq"><div class="sq-label">PROGRESS</div><div class="sq-val" id="rp-prog">—</div></div>
+        <div class="sq"><div class="sq-label">ELAPSED</div><div class="sq-val" id="rp-elapsed">—</div></div>
+      </div>
+      <div class="coord-box">
+        <div class="coord-row"><span class="coord-label">LAT</span><span class="coord-val" id="rp-lat">—</span></div>
+        <div class="coord-row"><span class="coord-label">LNG</span><span class="coord-val" id="rp-lng">—</span></div>
+        <div class="coord-row"><span class="coord-label">ALT</span><span class="coord-val hi" id="rp-alt">—</span></div>
+        <div class="coord-row"><span class="coord-label">SPD</span><span class="coord-val hi" id="rp-spd">—</span></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="rp-progress" style="width:0%"></div></div>
+      <label class="mini-label">Playback Speed: <span id="rp-speed-label">1</span>×</label>
+      <input type="range" min="0.25" max="10" step="0.25" value="1" id="rp-speed-range" oninput="document.getElementById('rp-speed-label').textContent=this.value">
+      <button class="btn btn-blue" id="replay-btn" onclick="toggleReplay()">▶ START REPLAY</button>
+    </div>
+    <div id="replay-empty" class="empty-msg">No trips yet. Record one first.</div>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div id="tab-schedule" class="tab-content">
+    <div id="sched-live-view" style="display:none">
+      <div class="gauge-wrap"><canvas id="sched-gauge" width="140" height="92"></canvas></div>
+      <div id="sched-act-banner" class="activity-banner"></div>
+      <div class="coord-box">
+        <div class="coord-row"><span class="coord-label">LAT</span><span class="coord-val" id="sc-lat">—</span></div>
+        <div class="coord-row"><span class="coord-label">LNG</span><span class="coord-val" id="sc-lng">—</span></div>
+        <div class="coord-row"><span class="coord-label">SPD</span><span class="coord-val hi" id="sc-spd">—</span></div>
+        <div class="coord-row"><span class="coord-label">BLOCK</span><span class="coord-val" id="sc-block">—</span></div>
+      </div>
+    </div>
+    <div id="sched-editor" style="display:none"></div>
+    <div id="sched-list">
+      <button class="btn btn-blue" onclick="newSchedule()">＋ NEW SCHEDULE</button>
+      <div id="sched-cards"></div>
+    </div>
+  </div>
+
+  <!-- SPOOF TAB -->
+  <div id="tab-spoof" class="tab-content">
+    <!-- Battery -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="spoof-title">🔋 BATTERY SPOOF</div>
+        <div class="toggle" id="batt-toggle" onclick="toggleSpoof('batt')"></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <div style="position:relative;width:100px;height:46px">
+          <div id="batt-border" style="position:absolute;inset:0;border:2px solid #4ade80;border-radius:6px"></div>
+          <div style="position:absolute;right:-7px;top:50%;transform:translateY(-50%);width:7px;height:16px;background:#4ade80;border-radius:0 3px 3px 0"></div>
+          <div id="batt-fill-vis" style="position:absolute;left:2px;top:2px;bottom:2px;width:96%;background:#4ade80;border-radius:4px;transition:width .3s"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;text-shadow:0 0 8px #000" id="batt-label-vis">100% ⚡</div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-bottom:0">
+        <div>
+          <label class="mini-label">% Level: <span id="batt-pct-lbl">100</span></label>
+          <input type="range" min="0" max="100" value="100" id="batt-pct-range" oninput="updateBatt()" style="accent-color:#4ade80">
+        </div>
+        <div>
+          <label class="mini-label">Temp: <span id="batt-temp-lbl">28</span>°C</label>
+          <input type="range" min="0" max="60" value="28" id="batt-temp-range" oninput="updateBatt()" style="accent-color:#fbbf24">
+        </div>
+        <div>
+          <label class="mini-label">Status</label>
+          <select class="mini-sel" id="batt-status" onchange="updateBatt()" style="margin-bottom:0">
+            <option value="1">Charging</option><option value="0">Discharging</option><option value="2">Full</option>
+          </select>
+        </div>
+        <div>
+          <label class="mini-label">Health</label>
+          <select class="mini-sel" id="batt-health" style="margin-bottom:0">
+            <option>Good</option><option>Excellent</option><option>Overheat</option><option>Dead</option><option>Cold</option>
+          </select>
+        </div>
+        <div>
+          <label class="mini-label">Voltage: <span id="batt-volt-lbl">4200</span>mV</label>
+          <input type="range" min="3000" max="4400" step="10" value="4200" id="batt-volt-range" oninput="updateBatt()" style="accent-color:#38bdf8">
+        </div>
+      </div>
+    </div>
+    <!-- WiFi -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="spoof-title">📶 WIFI SPOOF</div>
+        <div class="toggle" id="wifi-toggle" onclick="toggleSpoof('wifi')"></div>
+      </div>
+      <div id="wifi-body" style="display:none">
+        <label class="mini-label">Network Name (SSID)</label>
+        <input class="inp" id="wifi-ssid" value="Home_Network" oninput="updateWifi()"/>
+        <div class="grid2" style="margin-bottom:8px">
+          <div>
+            <label class="mini-label">Security</label>
+            <select class="mini-sel" id="wifi-sec" onchange="updateWifi()" style="margin-bottom:0">
+              <option>WPA2</option><option>WPA3</option><option>WEP</option><option>Open</option>
+            </select>
+          </div>
+          <div>
+            <label class="mini-label">Signal: <span id="wifi-str-lbl">4</span>/4</label>
+            <input type="range" min="1" max="4" value="4" id="wifi-str" oninput="updateWifi()" style="accent-color:#38bdf8">
+          </div>
+        </div>
+        <div class="wifi-preview">
+          <div style="font-size:10px;color:#475569;margin-bottom:6px">DISPLAYS AS:</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px" id="wifi-bars">▂▄▆█</span>
+            <span style="font-size:14px;color:#e2e8f0" id="wifi-name-preview">Home_Network</span>
+            <span style="font-size:10px;color:#475569" id="wifi-sec-preview">🔒WPA2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Timezone -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="spoof-title">🕐 TIMEZONE SPOOF</div>
+        <div class="toggle" id="tz-toggle" onclick="toggleSpoof('tz')"></div>
+      </div>
+      <div id="tz-body" style="display:none">
+        <select class="mini-sel" id="tz-select" onchange="updateTz()">
+          <option value="America/New_York">New York (EST)</option>
+          <option value="America/Chicago">Chicago (CST)</option>
+          <option value="America/Denver">Denver (MST)</option>
+          <option value="America/Los_Angeles">Los Angeles (PST)</option>
+          <option value="Europe/London">London (GMT)</option>
+          <option value="Europe/Paris">Paris (CET)</option>
+          <option value="Asia/Dubai">Dubai (GST)</option>
+          <option value="Asia/Tokyo">Tokyo (JST)</option>
+          <option value="Australia/Sydney">Sydney (AEST)</option>
+        </select>
+        <div class="tz-display">
+          <div style="font-size:10px;color:#475569;margin-bottom:4px">SPOOFED TIME</div>
+          <div style="font-size:24px;color:#5eead4;font-weight:700" id="tz-clock">—</div>
+          <div style="font-size:11px;color:#475569" id="tz-zone-label">America/New_York</div>
+        </div>
+      </div>
+    </div>
+    <!-- Altitude -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="spoof-title">⛰ ALTITUDE SPOOF</div>
+        <div class="toggle" id="alt-toggle" onclick="toggleSpoof('alt')"></div>
+      </div>
+      <div id="alt-body" style="display:none">
+        <label class="mini-label">Elevation: <span id="alt-val-lbl">0</span> <span id="alt-unit-lbl">m</span></label>
+        <input type="range" min="-100" max="8849" value="0" id="alt-range" oninput="updateAlt()" style="accent-color:#a78bfa">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="mini-sel" id="alt-unit" onchange="updateAlt()" style="margin-bottom:0;flex:1">
+            <option value="m">Meters</option><option value="ft">Feet</option>
+          </select>
+          <input class="mini-inp" type="number" id="alt-exact" placeholder="Exact value" style="flex:1;margin-bottom:0" oninput="document.getElementById('alt-range').value=this.value;updateAlt()">
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Presets:</div>
+        <div>
+          <button class="preset-btn" onclick="setAlt(0)">Sea Level</button>
+          <button class="preset-btn" onclick="setAlt(300)">300m Hill</button>
+          <button class="preset-btn" onclick="setAlt(1500)">1500m Mtn</button>
+        </div>
+      </div>
+    </div>
+    <!-- Motion -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="spoof-title">📱 MOTION SPOOF</div>
+        <div class="toggle" id="motion-toggle" onclick="toggleSpoof('motion')"></div>
+      </div>
+      <div id="motion-body" style="display:none">
+        <div style="background:#080d17;border-radius:8px;padding:10px 14px;border:1px solid #1e3a5f">
+          <div class="mini-label" style="margin-bottom:6px">LIVE ACCELEROMETER OUTPUT</div>
+          <div id="motion-bars"></div>
+        </div>
+        <div class="hint">Mirrors the current activity type being replayed — walking, cycling, or driving patterns.</div>
+      </div>
+    </div>
+    <button class="btn btn-gray" onclick="exportSpoofConfig()">⬇ EXPORT SPOOF CONFIG JSON</button>
+  </div>
+
+  <!-- TOOLS TAB -->
+  <div id="tab-tools" class="tab-content">
+    <!-- Teleport -->
+    <div class="card">
+      <div class="spoof-title">🌐 QUICK TELEPORT</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Type any address or place to get its GPS coordinates instantly.</div>
+      <input class="inp" id="teleport-inp" placeholder="e.g. Eiffel Tower, Paris"/>
+      <button class="btn btn-blue" onclick="doTeleport()" id="teleport-btn">🔍 FIND LOCATION</button>
+      <div id="teleport-result" style="display:none"></div>
+    </div>
+    <!-- Geofence -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="spoof-title">📍 GEOFENCE TRIGGERS</div>
+        <button class="icon-btn" onclick="toggleGeoForm()">＋ Add</button>
+      </div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Auto-start a trip when entering or leaving a zone.</div>
+      <div id="geo-form" style="display:none">
+        <label class="mini-label">Zone Name</label>
+        <input class="inp" id="geo-name" placeholder="e.g. Home Zone"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="mini-label">Latitude</label><input class="mini-inp" type="number" step="0.000001" id="geo-lat"/></div>
+          <div><label class="mini-label">Longitude</label><input class="mini-inp" type="number" step="0.000001" id="geo-lng"/></div>
+        </div>
+        <label class="mini-label">Radius: <span id="geo-radius-lbl">200</span>m</label>
+        <input type="range" min="50" max="5000" step="50" value="200" id="geo-radius" oninput="document.getElementById('geo-radius-lbl').textContent=this.value" style="accent-color:#f97316">
+        <label class="mini-label">Trigger</label>
+        <select class="mini-sel" id="geo-trigger">
+          <option value="enter">When I ENTER this zone</option>
+          <option value="exit">When I LEAVE this zone</option>
+        </select>
+        <label class="mini-label">Auto-start Trip</label>
+        <select class="mini-sel" id="geo-trip-sel">
+          <option value="">— select trip —</option>
+        </select>
+        <button class="btn btn-green" onclick="saveGeofence()" style="margin-bottom:0">💾 SAVE GEOFENCE</button>
+      </div>
+      <div id="geo-list"></div>
+    </div>
+    <!-- PIN Reset -->
+    <div class="card">
+      <div class="spoof-title">🔐 CHANGE PIN</div>
+      <button class="btn btn-gray" style="margin-top:8px" onclick="resetPin()">Reset PIN (asks on next open)</button>
+    </div>
+  </div>
+
+  <!-- TRIPS TAB -->
+  <div id="tab-trips" class="tab-content">
+    <label class="btn btn-green" style="display:block;text-align:center;cursor:pointer;margin-bottom:12px">
+      📂 IMPORT TRIP JSON
+      <input type="file" accept=".json" style="display:none" onchange="importTrip(event)"/>
+    </label>
+    <div id="trips-list"></div>
+  </div>
+
+  <!-- Schedule Complete Overlay -->
+  <div class="overlay" id="sched-complete-overlay" style="display:none">
+    <div class="overlay-box">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-size:20px;font-weight:700;color:#4ade80;letter-spacing:2px;margin-bottom:8px">SCHEDULE COMPLETE</div>
+      <div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-bottom:20px">All trips and waits finished. GPS spoofing stopped.</div>
+      <div style="background:#080d17;border:1px solid #1e3a5f;border-radius:10px;padding:14px;text-align:left;margin-bottom:20px">
+        <div style="font-size:11px;color:#fbbf24;letter-spacing:2px;margin-bottom:8px">📱 RE-ENABLE REAL GPS:</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.9">
+          1. Settings → <span style="color:#5eead4">Developer Options</span><br/>
+          2. Tap <span style="color:#5eead4">Mock location app</span><br/>
+          3. Select <span style="color:#5eead4">"None"</span><br/>
+          4. Real GPS is now active ✓
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="document.getElementById('sched-complete-overlay').style.display='none'">↩ Back to Spoof 360</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════
+const SK={pin:'s360_pin',trips:'s360_trips',scheds:'s360_scheds',batt:'s360_batt',wifi:'s360_wifi',tz:'s360_tz',alt:'s360_alt',geo:'s360_geo'};
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)??'null')??d;}catch{return d;}};
+const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let trips=ld(SK.trips,[]);
+let schedules=ld(SK.scheds,[]);
+let geofences=ld(SK.geo,[]);
+let batt=ld(SK.batt,{on:false,pct:100,temp:28,charging:true,health:'Good',voltage:4200});
+let wifiCfg=ld(SK.wifi,{on:false,ssid:'Home_Network',security:'WPA2',strength:4});
+let tzCfg=ld(SK.tz,{on:false,tz:'America/New_York'});
+let altCfg=ld(SK.alt,{on:false,value:0,unit:'m'});
+let motionOn=false;
+
+let recording=false,recPoints=[],recStart=0,recTimer=null,recWatch=null;
+let replayTrip=null,replayIdx=0,replayTimer=null,replayRunning=false,replayLiveWatch=null;
+let schedRunning=false,schedTimer=null,schedReplayTimer=null,schedLivePos=null,schedLiveKph=null;
+let tzTimer=null,motionTimer=null;
+let calcExpr='',calcDisplay='0';
+let pinSetupStep=1,pinSetupFirst='',pinSetupCurrent='';
+let pinUnlockCurrent='';
+let editingSchedId=null,editingSchedBlocks=[],editingSchedName='';
+let geoFormOpen=false;
+let teleportLoading=false;
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+const fmtT=(ms)=>{const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);return`${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;};
+const fmtC=(n)=>n==null?'—':n.toFixed(6);
+const mps2kph=(v)=>v==null?null:v*3.6;
+const nowHHMM=()=>{const d=new Date();return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const timeToMs=(t)=>{if(!t)return 0;const[h,m]=t.split(':').map(Number),d=new Date();d.setHours(h,m,0,0);let diff=d-Date.now();if(diff<0)diff+=86400000;return diff;};
+
+function haversine(a,b){
+  const R=6371000,φ1=a.lat*Math.PI/180,φ2=b.lat*Math.PI/180,Δφ=(b.lat-a.lat)*Math.PI/180,Δλ=(b.lng-a.lng)*Math.PI/180;
+  const x=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+function getActivity(kph){
+  if(kph==null)return{label:'Unknown',icon:'❓',color:'#5eead4',bg:'#0a1628'};
+  if(kph<1)return{label:'Stationary',icon:'🧍',color:'#94a3b8',bg:'#111827'};
+  if(kph<8)return{label:'Walking',icon:'🚶',color:'#4ade80',bg:'#052e16'};
+  if(kph<25)return{label:'Cycling',icon:'🚴',color:'#fbbf24',bg:'#1c1003'};
+  if(kph<120)return{label:'Driving',icon:'🚗',color:'#38bdf8',bg:'#0c1a2e'};
+  return{label:'Fast',icon:'✈️',color:'#f97316',bg:'#1a0e00'};
+}
+
+function tripStats(pts){
+  if(!pts||pts.length<2)return{dist:0,duration:0,avgKph:0,maxKph:0};
+  let dist=0,maxKph=0;
+  for(let i=1;i<pts.length;i++){dist+=haversine(pts[i-1],pts[i]);const k=mps2kph(pts[i].spd);if(k!=null&&k>maxKph)maxKph=k;}
+  const dur=pts[pts.length-1].ts-pts[0].ts;
+  return{dist,duration:dur,avgKph:dur>0?(dist/1000)/(dur/3600000):0,maxKph};
+}
+
+function enrichSpeeds(pts){
+  return pts.map((pt,i)=>{
+    if(pt.spd!=null)return pt;
+    if(i===0)return{...pt,spd:0};
+    const p=pts[i-1],dt=(pt.ts-p.ts)/1000;
+    return{...pt,spd:dt>0?haversine(p,pt)/dt:0};
+  });
+}
+
+function genMotion(kph){
+  const t=Date.now()/1000;
+  if(kph==null||kph<1)return{x:0,y:9.81,z:0};
+  if(kph<8)return{x:Math.sin(t*6)*1.2,y:9.81+Math.sin(t*12)*0.8,z:Math.cos(t*6)*0.4};
+  if(kph<25)return{x:Math.sin(t*4)*0.6,y:9.81+Math.sin(t*8)*0.3,z:Math.cos(t*3)*0.5};
+  return{x:Math.sin(t*2)*0.3,y:9.81+Math.sin(t*4)*0.15,z:Math.cos(t*1.5)*0.2};
+}
+
+// ═══════════════════════════════════════════
+//  GAUGE DRAWING
+// ═══════════════════════════════════════════
+function drawGauge(canvasId,kph,activity){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width=140,H=canvas.height=92;
+  ctx.clearRect(0,0,W,H);
+  const pct=Math.min((kph??0)/160,1),angle=(-135+pct*270)*Math.PI/180;
+  // Track
+  ctx.beginPath();ctx.arc(70,85,55,-135*Math.PI/180,135*Math.PI/180);
+  ctx.strokeStyle='#1e3a5f';ctx.lineWidth=10;ctx.lineCap='round';ctx.stroke();
+  // Fill
+  if(pct>0){
+    ctx.beginPath();ctx.arc(70,85,55,-135*Math.PI/180,(-135+pct*270)*Math.PI/180);
+    ctx.strokeStyle=activity.color;ctx.lineWidth=10;ctx.lineCap='round';ctx.stroke();
+  }
+  // Needle
+  ctx.save();ctx.translate(70,85);ctx.rotate(angle);
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-47);
+  ctx.strokeStyle=activity.color;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fillStyle=activity.color;ctx.fill();
+  ctx.restore();
+  // Text
+  ctx.fillStyle=activity.color;ctx.font='bold 18px monospace';ctx.textAlign='center';
+  ctx.fillText(kph!=null?kph.toFixed(1):'—',70,76);
+  ctx.fillStyle='#475569';ctx.font='9px monospace';ctx.fillText('km/h',70,88);
+}
+
+// ═══════════════════════════════════════════
+//  MAP DRAWING
+// ═══════════════════════════════════════════
+function drawMap(canvasId,points,currentIdx){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas||!points||points.length<2)return;
+  const ctx=canvas.getContext('2d');
+  const W=360,H=200;canvas.width=W;canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#080d17';ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='#1e3a5f22';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(i*W/4,0);ctx.lineTo(i*W/4,H);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*H/4);ctx.lineTo(W,i*H/4);ctx.stroke();}
+  const lats=points.map(p=>p.lat),lngs=points.map(p=>p.lng);
+  const minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs);
+  const pad=0.1,latR=(maxLat-minLat)||0.001,lngR=(maxLng-minLng)||0.001;
+  const xy=(lat,lng)=>({x:((lng-minLng)/lngR*(1-2*pad)+pad)*W,y:((maxLat-lat)/latR*(1-2*pad)+pad)*H});
+  // Dim route
+  ctx.beginPath();ctx.strokeStyle='#1e4060';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+  points.forEach((p,i)=>{const{x,y}=xy(p.lat,p.lng);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();ctx.setLineDash([]);
+  // Traveled
+  if(currentIdx>0){
+    ctx.beginPath();ctx.strokeStyle='#5eead4';ctx.lineWidth=3;
+    points.slice(0,currentIdx+1).forEach((p,i)=>{const{x,y}=xy(p.lat,p.lng);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke();
+  }
+  // Markers
+  const s=xy(points[0].lat,points[0].lng);
+  ctx.fillStyle='#4ade80';ctx.beginPath();ctx.arc(s.x,s.y,6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText('S',s.x,s.y+3);
+  const e=xy(points[points.length-1].lat,points[points.length-1].lng);
+  ctx.fillStyle='#f97316';ctx.beginPath();ctx.arc(e.x,e.y,6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.fillText('E',e.x,e.y+3);
+  if(currentIdx>=0&&currentIdx<points.length){
+    const c=xy(points[currentIdx].lat,points[currentIdx].lng);
+    ctx.fillStyle='#5eead4';ctx.beginPath();ctx.arc(c.x,c.y,8,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c.x,c.y,8,0,Math.PI*2);ctx.stroke();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  ACTIVITY BAR
+// ═══════════════════════════════════════════
+function renderActivityBar(containerId,pts){
+  const el=document.getElementById(containerId);
+  if(!el||!pts||pts.length<2){if(el)el.innerHTML='';return;}
+  const b={};
+  pts.forEach(p=>{const n=getActivity(mps2kph(p.spd)).label;b[n]=(b[n]||0)+1;});
+  const total=pts.length,kf=n=>n==='Walking'?3:n==='Cycling'?15:n==='Driving'?60:n==='Fast'?130:0;
+  const entries=Object.entries(b).filter(([,v])=>v>0);
+  let bar='',legend='';
+  entries.forEach(([n,c])=>{const a=getActivity(kf(n));bar+=`<div style="flex:${c};background:${a.color}"></div>`;legend+=`<span style="font-size:10px;color:${a.color}">${a.icon} ${n} ${((c/total)*100).toFixed(0)}%</span>`;});
+  el.innerHTML=`<div class="act-bar-wrap"><div class="mini-label" style="margin-bottom:6px">ACTIVITY BREAKDOWN</div><div class="act-bar">${bar}</div><div class="act-legend">${legend}</div></div>`;
+}
+
+// ═══════════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='trips')renderTrips();
+  if(name==='replay')renderReplaySelect();
+}
+
+// ═══════════════════════════════════════════
+//  CALCULATOR
+// ═══════════════════════════════════════════
+function initCalc(){
+  const rows=[['7','8','9','÷'],['4','5','6','×'],['1','2','3','-'],['C','0','.','+'],[null,null,null,'=']];
+  let html='';
+  rows.forEach(row=>{
+    html+='<div class="calc-grid">';
+    row.forEach(btn=>{
+      if(!btn){html+='<button class="calc-btn empty"></button>';return;}
+      const cls=btn==='='?'eq':btn==='C'?'cl':'';
+      html+=`<button class="calc-btn ${cls}" onclick="calcPress('${btn}')">${btn}</button>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('calc-buttons').innerHTML=html;
+}
+
+function calcPress(val){
+  const pin=ld(SK.pin,'');
+  if(val==='C'){calcExpr='';calcDisplay='0';updateCalcDisplay();return;}
+  if(val==='='){
+    const attempt=calcExpr+(calcDisplay==='0'?'':calcDisplay);
+    if(attempt===pin){showApp();return;}
+    try{const r=eval(attempt.replace(/[^0-9+\-*/.]/g,''));calcDisplay=String(r);calcExpr='';}
+    catch{calcDisplay='Error';calcExpr='';}
+    updateCalcDisplay();return;
+  }
+  if(['×','÷','+','-'].includes(val)){
+    calcExpr+=(calcDisplay==='0'?'':calcDisplay)+(val==='×'?'*':val==='÷'?'/':val);
+    calcDisplay='0';updateCalcDisplay();return;
+  }
+  if(val==='.'){if(!calcDisplay.includes('.'))calcDisplay+='.';updateCalcDisplay();return;}
+  calcDisplay=calcDisplay==='0'?val:calcDisplay+val;
+  updateCalcDisplay();
+}
+function updateCalcDisplay(){
+  document.getElementById('calc-expr').textContent=calcExpr;
+  document.getElementById('calc-num').textContent=calcDisplay;
+}
+
+// ═══════════════════════════════════════════
+//  PIN SETUP
+// ═══════════════════════════════════════════
+function pinSetupPress(d){
+  pinSetupCurrent+=d;
+  updateSetupDots();
+  if(pinSetupCurrent.length===4){
+    if(pinSetupStep===1){pinSetupFirst=pinSetupCurrent;pinSetupCurrent='';pinSetupStep=2;document.getElementById('pin-setup-label').textContent='CONFIRM YOUR PIN';updateSetupDots();}
+    else{
+      if(pinSetupCurrent===pinSetupFirst){sv(SK.pin,pinSetupCurrent);showApp();}
+      else{document.getElementById('pin-setup-err').textContent="PINs don't match. Try again.";pinSetupFirst='';pinSetupCurrent='';pinSetupStep=1;document.getElementById('pin-setup-label').textContent='SET YOUR PIN';updateSetupDots();}
+    }
+  }
+}
+function pinSetupDel(){pinSetupCurrent=pinSetupCurrent.slice(0,-1);updateSetupDots();}
+function updateSetupDots(){for(let i=0;i<4;i++)document.getElementById('sd'+i).className='pin-dot'+(i<pinSetupCurrent.length?' filled':'');}
+
+// ═══════════════════════════════════════════
+//  PIN UNLOCK
+// ═══════════════════════════════════════════
+function pinUnlockPress(d){
+  pinUnlockCurrent+=d;
+  updateUnlockDots();
+  if(pinUnlockCurrent.length===4){
+    if(pinUnlockCurrent===ld(SK.pin,'')){showApp();}
+    else{document.getElementById('pin-unlock-err').textContent='Incorrect PIN';pinUnlockCurrent='';updateUnlockDots();}
+  }
+}
+function pinUnlockDel(){pinUnlockCurrent=pinUnlockCurrent.slice(0,-1);updateUnlockDots();}
+function updateUnlockDots(){for(let i=0;i<4;i++)document.getElementById('ud'+i).className='pin-dot'+(i<pinUnlockCurrent.length?' filled':'');}
+
+function showApp(){
+  showScreen('app-screen');
+  initBatt();initWifi();initTz();initAlt();initMotion();
+  renderTrips();renderReplaySelect();renderSchedules();renderGeofences();
+  startTzTicker();
+  drawGauge('rec-gauge',null,getActivity(null));
+}
+function resetPin(){sv(SK.pin,'');alert('PIN reset. Reload the app to set a new one.');location.reload();}
+
+// ═══════════════════════════════════════════
+//  RECORDING
+// ═══════════════════════════════════════════
+function toggleRecord(){
+  if(!recording)startRecord();else stopRecord();
+}
+function startRecord(){
+  if(!navigator.geolocation){alert('Geolocation not supported. Use Chrome on Android.');return;}
+  recPoints=[];recStart=Date.now();
+  document.getElementById('rec-btn').textContent='⏹ STOP RECORDING';
+  document.getElementById('rec-btn').className='btn btn-red';
+  document.getElementById('rec-status').textContent='🔴 REC';
+  document.getElementById('rec-save-box').style.display='none';
+  recWatch=navigator.geolocation.watchPosition(pos=>{
+    const pt={lat:pos.coords.latitude,lng:pos.coords.longitude,
+      alt:altCfg.on?altCfg.value:pos.coords.altitude,
+      acc:pos.coords.accuracy,spd:pos.coords.speed,ts:Date.now()-recStart};
+    recPoints.push(pt);
+    const kph=mps2kph(pt.spd)||(recPoints.length>1?haversine(recPoints[recPoints.length-2],pt)/((pt.ts-(recPoints[recPoints.length-2]?.ts||0))/1000)*3.6:null);
+    const act=getActivity(kph);
+    document.getElementById('rec-coords').style.display='block';
+    document.getElementById('rec-lat').textContent=fmtC(pt.lat);
+    document.getElementById('rec-lng').textContent=fmtC(pt.lng);
+    document.getElementById('rec-alt').textContent=altCfg.on?`${altCfg.value}${altCfg.unit} (spoofed)`:pt.alt!=null?`${pt.alt?.toFixed(0)}m`:'—';
+    document.getElementById('rec-spd').textContent=kph!=null?`${kph.toFixed(1)} km/h`:'—';
+    document.getElementById('rec-points').textContent=recPoints.length;
+    const banner=document.getElementById('rec-activity-banner');
+    banner.style.display='block';banner.textContent=`${act.icon} ${act.label}`;
+    banner.style.background=act.bg;banner.style.borderColor=act.color+'55';banner.style.color=act.color;
+    drawGauge('rec-gauge',kph,act);
+    if(recPoints.length>1){const st=tripStats(recPoints);document.getElementById('rec-dist').textContent=`${(st.dist/1000).toFixed(2)}km`;}
+  },err=>alert('GPS error: '+err.message),{enableHighAccuracy:true,maximumAge:0});
+  recTimer=setInterval(()=>document.getElementById('rec-elapsed').textContent=fmtT(Date.now()-recStart),500);
+  recording=true;
+}
+function stopRecord(){
+  if(recWatch!=null)navigator.geolocation.clearWatch(recWatch);
+  clearInterval(recTimer);recording=false;
+  document.getElementById('rec-btn').textContent='⏺ START RECORDING';
+  document.getElementById('rec-btn').className='btn btn-blue';
+  document.getElementById('rec-status').textContent='⚫ IDLE';
+  document.getElementById('rec-activity-banner').style.display='none';
+  drawGauge('rec-gauge',null,getActivity(null));
+  if(recPoints.length>1){
+    renderActivityBar('rec-activity-bar',recPoints);
+    document.getElementById('rec-save-box').style.display='block';
+  }
+}
+function saveTrip(){
+  if(recPoints.length<2)return;
+  const en=enrichSpeeds(recPoints);
+  const name=document.getElementById('trip-name-inp').value.trim()||`Trip ${new Date().toLocaleString()}`;
+  const notes=document.getElementById('trip-notes-inp').value.trim();
+  const trip={id:Date.now(),name,notes,points:en,savedAt:Date.now(),stats:tripStats(en)};
+  trips=[trip,...trips];sv(SK.trips,trips);
+  document.getElementById('trip-name-inp').value='';
+  document.getElementById('trip-notes-inp').value='';
+  recPoints=[];document.getElementById('rec-save-box').style.display='none';
+  document.getElementById('rec-coords').style.display='none';
+  document.getElementById('rec-points').textContent='0';
+  document.getElementById('rec-elapsed').textContent='00:00:00';
+  document.getElementById('rec-dist').textContent='—';
+  document.getElementById('rec-activity-bar').innerHTML='';
+  renderTrips();renderReplaySelect();
+  document.getElementById('trips-tab-btn').textContent=`🗂 TRIPS(${trips.length})`;
+  alert('Trip saved!');
+}
+function discardRec(){
+  stopRecord();recPoints=[];
+  document.getElementById('rec-save-box').style.display='none';
+  document.getElementById('rec-coords').style.display='none';
+  document.getElementById('rec-activity-bar').innerHTML='';
+}
+
+// ═══════════════════════════════════════════
+//  REPLAY
+// ═══════════════════════════════════════════
+function renderReplaySelect(){
+  const sel=document.getElementById('replay-select');
+  const geoSel=document.getElementById('geo-trip-sel');
+  sel.innerHTML='<option value="">— choose a trip —</option>';
+  if(geoSel)geoSel.innerHTML='<option value="">— select trip —</option>';
+  trips.forEach(t=>{
+    const act=getActivity(t.stats?.avgKph??null);
+    sel.innerHTML+=`<option value="${t.id}">${act.icon} ${t.name}</option>`;
+    if(geoSel)geoSel.innerHTML+=`<option value="${t.id}">${t.name}</option>`;
+  });
+  document.getElementById('replay-empty').style.display=trips.length===0?'block':'none';
+}
+
+function selectReplayTrip(){
+  const id=Number(document.getElementById('replay-select').value);
+  replayTrip=trips.find(t=>t.id===id)||null;
+  const detail=document.getElementById('replay-trip-detail');
+  if(!replayTrip){detail.style.display='none';return;}
+  detail.style.display='block';
+  replayIdx=0;
+  renderActivityBar('replay-act-bar',replayTrip.points);
+  const pt=replayTrip.points[0];
+  setReplayPos(pt,0);
+  drawMap('replay-map',replayTrip.points,0);
+  const stats=replayTrip.stats||tripStats(replayTrip.points);
+  document.getElementById('rp-points').textContent=replayTrip.points.length;
+  document.getElementById('rp-dur').textContent=fmtT(replayTrip.points[replayTrip.points.length-1]?.ts||0);
+  // Notes
+  const nb=document.getElementById('replay-notes-box');
+  if(replayTrip.notes){nb.style.display='block';document.getElementById('replay-notes-text').textContent='📝 '+replayTrip.notes;}
+  else nb.style.display='none';
+  // Gauge
+  const kph=mps2kph(pt?.spd);const act=getActivity(kph);
+  document.getElementById('replay-gauge-area').innerHTML='<div class="gauge-wrap"><canvas id="replay-gauge" width="140" height="92"></canvas></div>';
+  drawGauge('replay-gauge',kph,act);
+}
+
+function setReplayPos(pt,idx){
+  if(!pt)return;
+  const kph=mps2kph(pt.spd);const act=getActivity(kph);
+  document.getElementById('rp-lat').textContent=fmtC(pt.lat);
+  document.getElementById('rp-lng').textContent=fmtC(pt.lng);
+  document.getElementById('rp-alt').textContent=altCfg.on?`${altCfg.value}${altCfg.unit}`:pt.alt!=null?`${pt.alt?.toFixed(0)}m`:'—';
+  document.getElementById('rp-spd').textContent=kph!=null?`${kph.toFixed(1)} km/h`:'—';
+  document.getElementById('rp-elapsed').textContent=fmtT(pt.ts);
+  document.getElementById('rp-prog').textContent=`${idx+1}/${replayTrip?.points.length||0}`;
+  const pct=replayTrip?((idx/(replayTrip.points.length-1))*100):0;
+  document.getElementById('rp-progress').style.width=pct+'%';
+  const banner=document.getElementById('replay-act-banner');
+  if(replayRunning){banner.style.display='block';banner.textContent=`${act.icon} REPLAYING AS: ${act.label}`;banner.style.background=act.bg;banner.style.borderColor=act.color+'55';banner.style.color=act.color;}
+  drawGauge('replay-gauge',kph,act);
+  drawMap('replay-map',replayTrip.points,idx);
+}
+
+function toggleReplay(){if(!replayRunning)startReplay();else stopReplay();}
+function startReplay(){
+  if(!replayTrip)return;
+  replayRunning=true;replayIdx=0;
+  document.getElementById('replay-btn').textContent='⏹ STOP REPLAY';
+  document.getElementById('replay-btn').className='btn btn-red';
+  document.getElementById('replay-banner').style.display='flex';
+  document.getElementById('replay-banner-text').textContent='▶ REPLAYING: '+replayTrip.name;
+  doReplayStep();
+}
+function doReplayStep(){
+  if(!replayRunning||!replayTrip)return;
+  const pts=replayTrip.points;
+  if(replayIdx>=pts.length){stopReplay();return;}
+  setReplayPos(pts[replayIdx],replayIdx);
+  const speed=parseFloat(document.getElementById('rp-speed-range').value)||1;
+  const next=replayIdx+1;
+  if(next<pts.length){
+    const delay=Math.max((pts[next].ts-pts[replayIdx].ts)/speed,50);
+    replayIdx++;replayTimer=setTimeout(doReplayStep,delay);
+  }else{stopReplay();}
+}
+function stopReplay(){
+  clearTimeout(replayTimer);replayRunning=false;
+  if(replayLiveWatch!=null)navigator.geolocation.clearWatch(replayLiveWatch);
+  document.getElementById('replay-btn').textContent='▶ START REPLAY';
+  document.getElementById('replay-btn').className='btn btn-blue';
+  document.getElementById('replay-banner').style.display='none';
+  document.getElementById('replay-act-banner').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+//  TRIPS
+// ═══════════════════════════════════════════
+function renderTrips(){
+  const el=document.getElementById('trips-list');
+  document.getElementById('trips-tab-btn').textContent=`🗂 TRIPS(${trips.length})`;
+  if(!trips.length){el.innerHTML='<div class="empty-msg">No trips yet.</div>';return;}
+  el.innerHTML=trips.map(t=>{
+    const act=getActivity(t.stats?.avgKph??null);
+    const stats=t.stats||tripStats(t.points);
+    return`<div class="trip-card" style="border-color:${act.color}44">
+      <div class="flex-row" style="margin-bottom:8px">
+        <span style="font-size:24px">${act.icon}</span>
+        <div><div style="font-size:14px;font-weight:700;color:#e2e8f0">${t.name}</div><div style="font-size:11px;color:${act.color}">${act.label}</div></div>
+      </div>
+      ${t.notes?`<div style="background:#080d17;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#94a3b8;line-height:1.5">📝 ${t.notes}</div>`:''}
+      <div class="mini-stat-grid">
+        <div class="mini-stat"><div class="mini-stat-label">AVG SPD</div><div class="mini-stat-val">${stats.avgKph.toFixed(1)}kph</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">MAX SPD</div><div class="mini-stat-val">${stats.maxKph.toFixed(1)}kph</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">DIST</div><div class="mini-stat-val">${(stats.dist/1000).toFixed(2)}km</div></div>
+      </div>
+      <div style="font-size:10px;color:#334155;margin-bottom:8px">${new Date(t.savedAt).toLocaleString()}</div>
+      <div class="flex-btns">
+        <button class="btn btn-blue" style="flex:2;padding:8px;font-size:12px;margin-bottom:0" onclick="replayFromTrips(${t.id})">▶ Replay</button>
+        <button class="btn btn-gray" style="flex:1;padding:8px;font-size:12px;margin-bottom:0" onclick="exportTrip(${t.id})">⬇</button>
+        <button class="btn btn-discard" style="flex:1;padding:8px;font-size:12px;margin-bottom:0" onclick="deleteTrip(${t.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function replayFromTrips(id){
+  const t=trips.find(x=>x.id===id);if(!t)return;
+  replayTrip=t;
+  document.getElementById('replay-select').value=id;
+  selectReplayTrip();
+  switchTab('replay',document.querySelector('.tab-btn:nth-child(2)'));
+}
+function deleteTrip(id){if(!confirm('Delete this trip?'))return;trips=trips.filter(t=>t.id!==id);sv(SK.trips,trips);renderTrips();renderReplaySelect();}
+function exportTrip(id){
+  const t=trips.find(x=>x.id===id);if(!t)return;
+  const blob=new Blob([JSON.stringify(t,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=t.name.replace(/\s+/g,'_')+'.json';a.click();
+}
+function importTrip(e){
+  const file=e.target.files?.[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const t=JSON.parse(ev.target.result);if(!t.points)throw 0;t.id=Date.now();t.points=enrichSpeeds(t.points);if(!t.stats)t.stats=tripStats(t.points);trips=[t,...trips];sv(SK.trips,trips);renderTrips();renderReplaySelect();alert('Trip imported!');}catch{alert('Invalid file.');}};
+  r.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+//  SCHEDULE
+// ═══════════════════════════════════════════
+function renderSchedules(){
+  const el=document.getElementById('sched-cards');
+  if(!schedules.length){el.innerHTML='<div class="empty-msg">No schedules yet.</div>';return;}
+  el.innerHTML=schedules.map(sc=>`
+    <div class="sched-card">
+      <div style="font-size:14px;font-weight:700;color:#5eead4;margin-bottom:4px">${sc.name||'Unnamed'}</div>
+      <div style="font-size:11px;color:#475569;margin-bottom:10px">${sc.blocks.length} blocks · starts ${sc.blocks[0]?.startTime||'immediately'}</div>
+      <div class="flex-btns">
+        <button class="btn btn-green" style="flex:2;padding:8px;font-size:12px;margin-bottom:0" onclick="startSchedule(${sc.id})">▶ RUN</button>
+        <button class="btn btn-gray" style="flex:1;padding:8px;font-size:12px;margin-bottom:0" onclick="editSchedule(${sc.id})">✏️</button>
+        <button class="btn btn-discard" style="flex:1;padding:8px;font-size:12px;margin-bottom:0" onclick="deleteSchedule(${sc.id})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function newSchedule(){editingSchedId=null;editingSchedName='';editingSchedBlocks=[];showSchedEditor();}
+function editSchedule(id){const sc=schedules.find(s=>s.id===id);if(!sc)return;editingSchedId=id;editingSchedName=sc.name;editingSchedBlocks=JSON.parse(JSON.stringify(sc.blocks));showSchedEditor();}
+function deleteSchedule(id){if(!confirm('Delete schedule?'))return;schedules=schedules.filter(s=>s.id!==id);sv(SK.scheds,schedules);renderSchedules();}
+
+function showSchedEditor(){
+  document.getElementById('sched-list').style.display='none';
+  document.getElementById('sched-editor').style.display='block';
+  renderSchedEditor();
+}
+function hideSchedEditor(){document.getElementById('sched-list').style.display='block';document.getElementById('sched-editor').style.display='none';}
+
+function renderSchedEditor(){
+  const tripOpts=trips.map(t=>`<option value="${t.id}">${getActivity(t.stats?.avgKph??null).icon} ${t.name}</option>`).join('');
+  let blocksHtml=editingSchedBlocks.map((b,i)=>{
+    const col=b.type==='trip'?'#38bdf8':b.type==='stationary'?'#4ade80':'#fbbf24';
+    const icon=b.type==='trip'?'🗺️':b.type==='stationary'?'🧍':'⏱️';
+    let inner=`<label class="mini-label">Start Time</label><input type="time" class="time-inp" value="${b.startTime||''}" onchange="updBlock(${i},'startTime',this.value)">`;
+    if(b.type==='trip'){
+      inner+=`<label class="mini-label">Trip</label><select class="mini-sel" onchange="updBlock(${i},'tripId',Number(this.value))"><option value="">— select —</option>${tripOpts}</select>`;
+      inner+=`<label class="mini-label">Speed: ${b.speed||1}×</label><input type="range" min="0.25" max="10" step="0.25" value="${b.speed||1}" oninput="updBlock(${i},'speed',Number(this.value));this.previousElementSibling.textContent='Speed: '+this.value+'×'" style="accent-color:#38bdf8">`;
+    }else if(b.type==='stationary'){
+      inner+=`<label class="mini-label">Location</label><select class="mini-sel" onchange="updBlock(${i},'locationSrc',this.value)">
+        <option value="last"${b.locationSrc==='last'?' selected':''}>End of previous trip</option>
+        <option value="next"${b.locationSrc==='next'?' selected':''}>Start of next trip</option>
+        <option value="coords"${b.locationSrc==='coords'?' selected':''}>Manual coordinates</option>
+      </select>`;
+      if(b.locationSrc==='coords')inner+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="mini-label">Lat</label><input class="mini-inp" type="number" step="0.000001" value="${b.lat||''}" onchange="updBlock(${i},'lat',parseFloat(this.value))"></div><div><label class="mini-label">Lng</label><input class="mini-inp" type="number" step="0.000001" value="${b.lng||''}" onchange="updBlock(${i},'lng',parseFloat(this.value))"></div></div>`;
+      inner+=`<label class="mini-label">Stay Until</label><input type="time" class="time-inp" value="${b.endTime||''}" onchange="updBlock(${i},'endTime',this.value)">`;
+    }else{
+      inner+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="mini-label">Hours</label><input class="mini-inp" type="number" min="0" max="23" value="${b.waitH||0}" onchange="updBlock(${i},'waitH',Number(this.value))"></div><div><label class="mini-label">Minutes</label><input class="mini-inp" type="number" min="0" max="59" value="${b.waitM||0}" onchange="updBlock(${i},'waitM',Number(this.value))"></div></div>`;
+    }
+    return`<div class="block-card" style="background:#0d1b2a;border-color:${col}33">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:${col}">${icon} ${b.type.toUpperCase()} — Block ${i+1}</span>
+        <div style="display:flex;gap:4px">
+          ${i>0?`<button class="icon-btn" onclick="mvBlock(${i},-1)">↑</button>`:''}
+          ${i<editingSchedBlocks.length-1?`<button class="icon-btn" onclick="mvBlock(${i},1)">↓</button>`:''}
+          <button class="icon-btn" style="color:#f87171" onclick="delBlock(${i})">✕</button>
+        </div>
+      </div>${inner}</div>`;
+  }).join('');
+
+  document.getElementById('sched-editor').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;color:#5eead4">SCHEDULE EDITOR</div>
+      <button class="icon-btn" onclick="hideSchedEditor()">✕ Cancel</button>
+    </div>
+    <label class="mini-label">Schedule Name</label>
+    <input class="inp" id="sched-name-inp" value="${editingSchedName}" placeholder="e.g. Monday Routine" oninput="editingSchedName=this.value">
+    ${blocksHtml}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <button class="btn" style="background:#0c1a2e;border:1px solid #38bdf844;color:#38bdf8;padding:10px 4px;font-size:12px;margin-bottom:0" onclick="addBlock('trip')">＋ Trip</button>
+      <button class="btn" style="background:#052e16;border:1px solid #4ade8044;color:#4ade80;padding:10px 4px;font-size:12px;margin-bottom:0" onclick="addBlock('stationary')">＋ Stay</button>
+      <button class="btn" style="background:#1c1003;border:1px solid #fbbf2444;color:#fbbf24;padding:10px 4px;font-size:12px;margin-bottom:0" onclick="addBlock('wait')">＋ Wait</button>
+    </div>
+    <button class="btn btn-green" onclick="saveSchedule()">💾 SAVE SCHEDULE</button>`;
+}
+
+function addBlock(type){editingSchedBlocks.push({id:Date.now(),type,startTime:nowHHMM(),speed:1,locationSrc:'last',waitH:0,waitM:30});renderSchedEditor();}
+function delBlock(i){editingSchedBlocks.splice(i,1);renderSchedEditor();}
+function mvBlock(i,d){const t=i+d;if(t<0||t>=editingSchedBlocks.length)return;[editingSchedBlocks[i],editingSchedBlocks[t]]=[editingSchedBlocks[t],editingSchedBlocks[i]];renderSchedEditor();}
+function updBlock(i,k,v){editingSchedBlocks[i][k]=v;if(k==='locationSrc')renderSchedEditor();}
+function saveSchedule(){
+  editingSchedName=document.getElementById('sched-name-inp')?.value||editingSchedName;
+  const sc={id:editingSchedId||Date.now(),name:editingSchedName,blocks:editingSchedBlocks};
+  if(editingSchedId)schedules=schedules.map(s=>s.id===editingSchedId?sc:s);
+  else schedules=[sc,...schedules];
+  sv(SK.scheds,schedules);hideSchedEditor();renderSchedules();
+}
+
+function resolveStatCoord(block,blocks,idx){
+  if(block.locationSrc==='coords'&&block.lat!=null)return{lat:block.lat,lng:block.lng,spd:0};
+  if(block.locationSrc==='next'){for(let i=idx+1;i<blocks.length;i++){if(blocks[i].type==='trip'){const t=trips.find(x=>x.id===blocks[i].tripId);if(t)return{...t.points[0],spd:0};}}}
+  for(let i=idx-1;i>=0;i--){if(blocks[i].type==='trip'){const t=trips.find(x=>x.id===blocks[i].tripId);if(t)return{...t.points[t.points.length-1],spd:0};}}
+  return null;
+}
+
+function startSchedule(id){
+  const sc=schedules.find(s=>s.id===id);if(!sc)return;
+  stopSchedule();schedRunning=true;
+  const first=sc.blocks[0];
+  if(first?.startTime){const delay=timeToMs(first.startTime);document.getElementById('sched-banner-text').textContent=`⏳ Starting at ${first.startTime} (${Math.round(delay/60000)}min)`;document.getElementById('sched-banner').style.display='flex';schedTimer=setTimeout(()=>runSchedBlock(sc,0),delay);}
+  else runSchedBlock(sc,0);
+}
+
+function runSchedBlock(sc,idx){
+  const blocks=sc.blocks;
+  if(idx>=blocks.length){document.getElementById('sched-complete-overlay').style.display='flex';stopSchedule();return;}
+  const block=blocks[idx];
+  document.getElementById('sched-banner').style.display='flex';
+  document.getElementById('sched-live-view').style.display='block';
+
+  if(block.type==='trip'){
+    const trip=trips.find(t=>t.id===block.tripId);
+    if(!trip){runSchedBlock(sc,idx+1);return;}
+    document.getElementById('sched-banner-text').textContent=`▶ Block ${idx+1}: "${trip.name}"`;
+    const pts=trip.points,speed=block.speed||1;let pi=0;
+    const adv=()=>{
+      if(!schedRunning)return;
+      if(pi>=pts.length){runSchedBlock(sc,idx+1);return;}
+      schedLivePos=pts[pi];schedLiveKph=mps2kph(pts[pi].spd);
+      updateSchedLive(idx,blocks.length);pi++;
+      if(pi<pts.length){schedReplayTimer=setTimeout(adv,Math.max((pts[pi].ts-pts[pi-1].ts)/speed,50));}
+      else setTimeout(()=>runSchedBlock(sc,idx+1),500);
+    };
+    adv();
+  }else if(block.type==='stationary'){
+    const coord=resolveStatCoord(block,blocks,idx);
+    if(coord){schedLivePos=coord;schedLiveKph=0;}
+    document.getElementById('sched-banner-text').textContent=`🧍 Block ${idx+1}: Stationary until ${block.endTime||'?'}`;
+    updateSchedLive(idx,blocks.length);
+    let delay=block.endTime?timeToMs(block.endTime):60000;if(delay<0)delay+=86400000;
+    schedTimer=setTimeout(()=>runSchedBlock(sc,idx+1),delay);
+  }else{
+    const ms=((block.waitH||0)*3600+(block.waitM||0)*60)*1000;
+    document.getElementById('sched-banner-text').textContent=`⏱ Block ${idx+1}: Wait ${block.waitH||0}h ${block.waitM||0}m`;
+    updateSchedLive(idx,blocks.length);
+    schedTimer=setTimeout(()=>runSchedBlock(sc,idx+1),ms||1000);
+  }
+}
+
+function updateSchedLive(idx,total){
+  if(!schedLivePos)return;
+  const act=getActivity(schedLiveKph);
+  document.getElementById('sc-lat').textContent=fmtC(schedLivePos.lat);
+  document.getElementById('sc-lng').textContent=fmtC(schedLivePos.lng);
+  document.getElementById('sc-spd').textContent=schedLiveKph!=null?`${schedLiveKph.toFixed(1)} km/h`:'—';
+  document.getElementById('sc-block').textContent=`${idx+1} / ${total}`;
+  const banner=document.getElementById('sched-act-banner');
+  banner.textContent=`${act.icon} ${act.label}`;banner.style.background=act.bg;banner.style.borderColor=act.color+'55';banner.style.color=act.color;
+  drawGauge('sched-gauge',schedLiveKph,act);
+}
+
+function stopSchedule(){
+  schedRunning=false;clearTimeout(schedTimer);clearTimeout(schedReplayTimer);
+  document.getElementById('sched-banner').style.display='none';
+  document.getElementById('sched-live-view').style.display='none';
+  schedLivePos=null;schedLiveKph=null;
+}
+
+// ═══════════════════════════════════════════
+//  SPOOF
+// ═══════════════════════════════════════════
+function toggleSpoof(type){
+  if(type==='batt'){batt.on=!batt.on;sv(SK.batt,batt);document.getElementById('batt-toggle').className='toggle'+(batt.on?' on':'');document.getElementById('batt-widget').style.display=batt.on?'flex':'none';}
+  if(type==='wifi'){wifiCfg.on=!wifiCfg.on;sv(SK.wifi,wifiCfg);document.getElementById('wifi-toggle').className='toggle'+(wifiCfg.on?' on':'');document.getElementById('wifi-body').style.display=wifiCfg.on?'block':'none';}
+  if(type==='tz'){tzCfg.on=!tzCfg.on;sv(SK.tz,tzCfg);document.getElementById('tz-toggle').className='toggle'+(tzCfg.on?' on':'');document.getElementById('tz-body').style.display=tzCfg.on?'block':'none';}
+  if(type==='alt'){altCfg.on=!altCfg.on;sv(SK.alt,altCfg);document.getElementById('alt-toggle').className='toggle'+(altCfg.on?' on':'');document.getElementById('alt-body').style.display=altCfg.on?'block':'none';}
+  if(type==='motion'){motionOn=!motionOn;document.getElementById('motion-toggle').className='toggle'+(motionOn?' on':'');document.getElementById('motion-body').style.display=motionOn?'block':'none';document.getElementById('motion-box').style.display=motionOn?'block':'none';if(motionOn)startMotionTicker();else stopMotionTicker();}
+}
+
+function initBatt(){
+  document.getElementById('batt-toggle').className='toggle'+(batt.on?' on':'');
+  document.getElementById('batt-widget').style.display=batt.on?'flex':'none';
+  document.getElementById('batt-pct-range').value=batt.pct;
+  document.getElementById('batt-temp-range').value=batt.temp;
+  document.getElementById('batt-volt-range').value=batt.voltage;
+  document.getElementById('batt-status').value=batt.charging?'1':'0';
+  updateBatt();
+}
+function updateBatt(){
+  const pct=Number(document.getElementById('batt-pct-range').value);
+  const temp=Number(document.getElementById('batt-temp-range').value);
+  const charging=document.getElementById('batt-status').value==='1'||document.getElementById('batt-status').value==='2';
+  const voltage=Number(document.getElementById('batt-volt-range').value);
+  batt={...batt,pct,temp,charging,voltage};sv(SK.batt,batt);
+  document.getElementById('batt-pct-lbl').textContent=pct;
+  document.getElementById('batt-temp-lbl').textContent=temp;
+  document.getElementById('batt-volt-lbl').textContent=voltage;
+  document.getElementById('batt-fill-vis').style.width=pct+'%';
+  document.getElementById('batt-fill-vis').style.background=pct>20?'#4ade80':'#f87171';
+  document.getElementById('batt-label-vis').textContent=pct+'%'+(charging?' ⚡':'');
+  // Header widget
+  document.getElementById('batt-pct-hdr').textContent=pct+'%';
+  document.getElementById('batt-charge-icon').textContent=charging?'⚡':'';
+  document.getElementById('batt-fill-hdr').style.width=pct+'%';
+}
+
+function initWifi(){
+  document.getElementById('wifi-toggle').className='toggle'+(wifiCfg.on?' on':'');
+  document.getElementById('wifi-body').style.display=wifiCfg.on?'block':'none';
+  document.getElementById('wifi-ssid').value=wifiCfg.ssid;
+  updateWifi();
+}
+function updateWifi(){
+  const ssid=document.getElementById('wifi-ssid').value;
+  const sec=document.getElementById('wifi-sec').value;
+  const str=Number(document.getElementById('wifi-str').value);
+  wifiCfg={...wifiCfg,ssid,security:sec,strength:str};sv(SK.wifi,wifiCfg);
+  document.getElementById('wifi-str-lbl').textContent=str;
+  document.getElementById('wifi-bars').textContent='▂▄▆█'.slice(0,str);
+  document.getElementById('wifi-name-preview').textContent=ssid;
+  document.getElementById('wifi-sec-preview').textContent='🔒'+sec;
+}
+
+function initTz(){
+  document.getElementById('tz-toggle').className='toggle'+(tzCfg.on?' on':'');
+  document.getElementById('tz-body').style.display=tzCfg.on?'block':'none';
+  document.getElementById('tz-select').value=tzCfg.tz;
+}
+function updateTz(){tzCfg.tz=document.getElementById('tz-select').value;sv(SK.tz,tzCfg);}
+function startTzTicker(){
+  tzTimer=setInterval(()=>{
+    if(tzCfg.on){
+      const t=new Date().toLocaleTimeString('en-US',{timeZone:tzCfg.tz,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      document.getElementById('tz-clock').textContent=t;
+      document.getElementById('tz-zone-label').textContent=tzCfg.tz;
+    }
+  },1000);
+}
+
+function initAlt(){
+  document.getElementById('alt-toggle').className='toggle'+(altCfg.on?' on':'');
+  document.getElementById('alt-body').style.display=altCfg.on?'block':'none';
+  document.getElementById('alt-range').value=altCfg.value;
+  document.getElementById('alt-unit').value=altCfg.unit;
+  updateAlt();
+}
+function updateAlt(){
+  const val=Number(document.getElementById('alt-range').value);
+  const unit=document.getElementById('alt-unit').value;
+  altCfg={...altCfg,value:val,unit};sv(SK.alt,altCfg);
+  document.getElementById('alt-val-lbl').textContent=val;
+  document.getElementById('alt-unit-lbl').textContent=unit;
+  document.getElementById('alt-exact').value=val;
+}
+function setAlt(v){document.getElementById('alt-range').value=v;updateAlt();}
+
+function initMotion(){
+  document.getElementById('motion-toggle').className='toggle';
+  document.getElementById('motion-body').style.display='none';
+  document.getElementById('motion-box').style.display='none';
+}
+function startMotionTicker(){
+  motionTimer=setInterval(()=>{
+    const kph=schedLiveKph??mps2kph(replayTrip?.points[replayIdx]?.spd);
+    const m=genMotion(kph);
+    ['x','y','z'].forEach(ax=>{
+      document.getElementById('motion-'+ax).textContent=`${ax.toUpperCase()}: ${m[ax].toFixed(2)}`;
+    });
+    const bars=['x','y','z'].map(ax=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="color:${ax==='x'?'#f87171':ax==='y'?'#4ade80':'#38bdf8'};font-size:12px;width:16px">${ax.toUpperCase()}</span>
+      <div style="flex:1;height:6px;background:#1e293b;border-radius:3px;overflow:hidden"><div style="width:${Math.min(Math.abs(m[ax])/20*100,100)}%;height:100%;background:${ax==='x'?'#f87171':ax==='y'?'#4ade80':'#38bdf8'}"></div></div>
+      <span style="color:${ax==='x'?'#f87171':ax==='y'?'#4ade80':'#38bdf8'};font-size:11px;width:48px;text-align:right">${m[ax].toFixed(2)}</span>
+    </div>`).join('');
+    document.getElementById('motion-bars').innerHTML=bars;
+  },100);
+}
+function stopMotionTicker(){clearInterval(motionTimer);}
+
+function exportSpoofConfig(){
+  const cfg={battery:batt,wifi:wifiCfg,timezone:tzCfg,altitude:altCfg};
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='spoof360_config.json';a.click();
+}
+
+// ═══════════════════════════════════════════
+//  TELEPORT
+// ═══════════════════════════════════════════
+async function doTeleport(){
+  const addr=document.getElementById('teleport-inp').value.trim();
+  if(!addr)return;
+  const btn=document.getElementById('teleport-btn');
+  btn.textContent='⏳ Searching...';btn.disabled=true;
+  document.getElementById('teleport-result').style.display='none';
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`);
+    const d=await r.json();
+    if(d.length>0){
+      const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon),name=d[0].display_name;
+      document.getElementById('teleport-result').style.display='block';
+      document.getElementById('teleport-result').innerHTML=`
+        <div style="background:#080d17;border:1px solid #4ade8033;border-radius:8px;padding:12px;margin-top:4px">
+          <div style="font-size:10px;color:#475569;letter-spacing:2px;margin-bottom:6px">TELEPORT TARGET</div>
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.5">${name}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <div class="mini-stat"><div class="mini-stat-label">LATITUDE</div><div class="mini-stat-val">${lat.toFixed(6)}</div></div>
+            <div class="mini-stat"><div class="mini-stat-label">LONGITUDE</div><div class="mini-stat-val">${lng.toFixed(6)}</div></div>
+          </div>
+          <button class="btn btn-green" style="margin-bottom:0;padding:10px" onclick="saveTeleportPin(${lat},${lng},'${name.replace(/'/g,'').substring(0,40)}')">📌 SAVE AS LOCATION PIN</button>
+        </div>`;
+    }else{
+      document.getElementById('teleport-result').style.display='block';
+      document.getElementById('teleport-result').innerHTML='<div style="color:#f87171;font-size:13px;padding:8px">Address not found. Try being more specific.</div>';
+    }
+  }catch{
+    document.getElementById('teleport-result').style.display='block';
+    document.getElementById('teleport-result').innerHTML='<div style="color:#f87171;font-size:13px;padding:8px">Network error. Check your connection.</div>';
+  }
+  btn.textContent='🔍 FIND LOCATION';btn.disabled=false;
+}
+
+function saveTeleportPin(lat,lng,name){
+  const pt={lat,lng,alt:altCfg.on?altCfg.value:0,spd:0,ts:0};
+  const trip={id:Date.now(),name:'📍 '+name,notes:`Teleport pin: ${name}`,points:[pt,{...pt,ts:1}],savedAt:Date.now(),stats:tripStats([pt,{...pt,ts:1}])};
+  trips=[trip,...trips];sv(SK.trips,trips);renderTrips();renderReplaySelect();
+  alert('Saved as location pin! Use in Schedule → Stationary block.');
+}
+
+// ═══════════════════════════════════════════
+//  GEOFENCE
+// ═══════════════════════════════════════════
+function toggleGeoForm(){geoFormOpen=!geoFormOpen;document.getElementById('geo-form').style.display=geoFormOpen?'block':'none';}
+function renderGeofences(){
+  const el=document.getElementById('geo-list');
+  if(!geofences.length){el.innerHTML='<div class="empty-msg" style="padding:20px 0">No geofences set up.</div>';return;}
+  el.innerHTML=geofences.map(g=>`
+    <div class="geo-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#f97316">${g.name}</div>
+          <div style="font-size:11px;color:#475569">${g.trigger==='enter'?'Enter':'Exit'} zone · r=${g.radius}m</div>
+          <div style="font-size:10px;color:#334155">${Number(g.lat).toFixed(4)}, ${Number(g.lng).toFixed(4)}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="toggle ${g.active?'on':''}" onclick="toggleGeo(${g.id})"></div>
+          <button class="icon-btn" style="color:#f87171" onclick="deleteGeo(${g.id})">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function saveGeofence(){
+  const name=document.getElementById('geo-name').value.trim();
+  const lat=document.getElementById('geo-lat').value;
+  const lng=document.getElementById('geo-lng').value;
+  if(!name||!lat||!lng){alert('Please fill in name, latitude, and longitude.');return;}
+  const geo={id:Date.now(),name,lat,lng,radius:Number(document.getElementById('geo-radius').value),trigger:document.getElementById('geo-trigger').value,tripId:Number(document.getElementById('geo-trip-sel').value)||null,active:true};
+  geofences=[...geofences,geo];sv(SK.geo,geofences);
+  document.getElementById('geo-name').value='';document.getElementById('geo-lat').value='';document.getElementById('geo-lng').value='';
+  toggleGeoForm();renderGeofences();
+}
+function toggleGeo(id){geofences=geofences.map(g=>g.id===id?{...g,active:!g.active}:g);sv(SK.geo,geofences);renderGeofences();}
+function deleteGeo(id){geofences=geofences.filter(g=>g.id!==id);sv(SK.geo,geofences);renderGeofences();}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.addEventListener('load',()=>{
+  initCalc();
+  const pin=ld(SK.pin,'');
+  if(!pin){showScreen('pin-setup-screen');}
+  else{showScreen('calc-screen');}
+});
+</script>
+</body>
+</html>
